@@ -1,116 +1,171 @@
-<?php  
+<?php
 require_once 'dbConfig.php';
 require_once 'models.php';
 
-if (isset($_POST['insertNewUserBtn'])) {
+// Handle user registration
+if (isset($_POST['registerUserBtn'])) {
     $username = trim($_POST['username']);
     $password = trim($_POST['password']);
-    $confirm_password = trim($_POST['confirm_password']);
+    $confirmPassword = trim($_POST['confirm_password']);
 
-    if (!empty($username) && !empty($password) && !empty($confirm_password)) {
-        if ($password == $confirm_password) {
-            // Insert new user into user_accounts table
-            $insertQuery = insertNewUser($pdo, $username, password_hash($password, PASSWORD_DEFAULT));
-            $_SESSION['message'] = $insertQuery['message'];
+    if (!empty($username) && !empty($password) && !empty($confirmPassword)) {
+        if ($password === $confirmPassword) {
+            $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+            $result = insertNewUser($pdo, $username, $hashedPassword);
 
-            if ($insertQuery['status'] == '200') {
-                $_SESSION['status'] = $insertQuery['status'];
+            if ($result) {
+                $_SESSION['message'] = "Registration successful! You can now log in.";
+                $_SESSION['status'] = '200';
                 header("Location: ../login.php");
+                exit();
             } else {
-                $_SESSION['status'] = $insertQuery['status'];
-                header("Location: ../register.php");
+                $_SESSION['message'] = "Error during registration. Please try again.";
             }
         } else {
             $_SESSION['message'] = "Passwords do not match!";
-            $_SESSION['status'] = '400';
-            header("Location: ../register.php");
         }
     } else {
-        $_SESSION['message'] = "All fields must be filled!";
-        $_SESSION['status'] = '400';
-        header("Location: ../register.php");
+        $_SESSION['message'] = "All fields are required!";
+    }
+    $_SESSION['status'] = '400';
+    header("Location: ../register.php");
+    exit();
+}
+
+// Handle user login
+if (isset($_POST['loginUserBtn'])) {
+    $username = trim($_POST['username']);
+    $password = trim($_POST['password']);
+
+    if (!empty($username) && !empty($password)) {
+        $loginQuery = checkIfUserExists($pdo, $username);
+
+        if ($loginQuery['result']) {
+            if (password_verify($password, $loginQuery['userInfoArray']['password'])) {
+                $_SESSION['user_id'] = $loginQuery['userInfoArray']['user_id'];
+                $_SESSION['username'] = $username;
+                header("Location: ../index.php");
+                exit();
+            } else {
+                $_SESSION['message'] = "Invalid username or password!";
+            }
+        } else {
+            $_SESSION['message'] = $loginQuery['message'];
+        }
+    } else {
+        $_SESSION['message'] = "Please fill out both username and password!";
+    }
+    $_SESSION['status'] = '400';
+    header("Location: ../login.php");
+    exit();
+}
+
+// Handle branch insertion
+if (isset($_POST['insertNewBranchBtn'])) {
+    // Corrected to use 'manager' instead of 'Manager'
+    $Manager = trim($_POST['manager']);
+    $contact_number = trim($_POST['contact_number']);
+    $first_name = trim($_POST['first_name']);
+    $last_name = trim($_POST['last_name']);
+    $email = trim($_POST['email']);
+    $gender = trim($_POST['gender']);
+    $address = trim($_POST['address']);
+    $job_position = trim($_POST['job_position']);
+    $application_status = trim($_POST['application_status']);
+
+    // Ensure both fields are not empty before attempting to insert
+    if (!empty($Manager) && !empty($contact_number)) {
+        $insertBranch = insertABranch($pdo, null, $Manager, $contact_number, $first_name, $last_name, $email, $gender, $address, $job_position, $application_status, $_SESSION['username']);
+        
+        $_SESSION['message'] = $insertBranch['message'];
+        $_SESSION['status'] = $insertBranch['status'];
+
+        // Check if the insertion was successful
+        if ($insertBranch['status'] == '200') {
+            header("Location: ../index.php"); // Redirect to index.php on successful insert
+            exit();
+        } else {
+            // Stay on the current page if there was an error
+            header("Location: ../insertbranch.php"); 
+            exit();
+        }
     }
 }
 
 
-
-if (isset($_POST['loginUserBtn'])) {
-	$username = trim($_POST['username']);
-	$password = trim($_POST['password']);
-
-	if (!empty($username) && !empty($password)) {
-		// Check if the user exists in the user_accounts table
-		$loginQuery = checkIfUserExists($pdo, $username);
-		$userIDFromDB = $loginQuery['userInfoArray']['user_id'];
-		$passwordFromDB = $loginQuery['userInfoArray']['password'];
-
-		if (password_verify($password, $passwordFromDB)) {
-			$_SESSION['user_id'] = $userIDFromDB;
-			$_SESSION['username'] = $username;
-			header("Location: ../index.php");
-		} else {
-			$_SESSION['message'] = "Invalid username or password";
-			$_SESSION['status'] = '400';
-			header("Location: ../login.php");
-		}
-	} else {
-		$_SESSION['message'] = "Please fill out both username and password!";
-		$_SESSION['status'] = '400';
-		header("Location: ../login.php");
-	}
-}
-
-if (isset($_POST['insertNewBranchBtn'])) {
-	$address = trim($_POST['address']);
-	$head_manager = trim($_POST['head_manager']);
-	$contact_number = trim($_POST['contact_number']);
-
-	if (!empty($address) && !empty($head_manager) && !empty($contact_number)) {
-		// Insert new branch into the branches table
-		$insertBranch = insertBranch($pdo, $address, $head_manager, $contact_number, $_SESSION['username']);
-		$_SESSION['status'] = $insertBranch['status'];
-		$_SESSION['message'] = $insertBranch['message'];
-		header("Location: ../index.php");
-	} else {
-		$_SESSION['message'] = "Please ensure no fields are empty!";
-		$_SESSION['status'] = '400';
-		header("Location: ../insertbranch.php");
-	}
-}
-
+// Handle branch update
 if (isset($_POST['updateBranchBtn'])) {
-	$address = trim($_POST['address']);
-	$head_manager = trim($_POST['head_manager']);
-	$contact_number = trim($_POST['contact_number']);
-	$date = date('Y-m-d H:i:s');
+    // Get the values from the form
+    $branch_id = $_POST['branch_id'];  // The branch ID passed through the form
+    $Manager = trim($_POST['Manager']);
+    $contact_number = trim($_POST['contact_number']);
+    $first_name = trim($_POST['first_name']);
+    $last_name = trim($_POST['last_name']);
+    $email = trim($_POST['email']);
+    $gender = trim($_POST['gender']);
+    $address = trim($_POST['address']);
+    $job_position = trim($_POST['job_position']);
+    $application_status = trim($_POST['application_status']);
+    $date = date('Y-m-d H:i:s');  // Current timestamp for updates
 
-	if (!empty($address) && !empty($head_manager) && !empty($contact_number)) {
-		// Update branch in the branches table
-		$updateBranch = updateBranch($pdo, $address, $head_manager, $contact_number, $date, $_SESSION['username'], $_GET['branch_id']);
-		$_SESSION['message'] = $updateBranch['message'];
-		$_SESSION['status'] = $updateBranch['status'];
-		header("Location: ../index.php");
-	} else {
-		$_SESSION['message'] = "Please ensure no fields are empty!";
-		$_SESSION['status'] = '400';
-		header("Location: ../updatebranch.php?branch_id=" . $_GET['branch_id']);
-	}
+    // Check if the required fields are not empty
+    if (!empty($Manager) && !empty($contact_number)) {
+        // Call the updateBranch function with all the necessary fields
+        $updateBranch = updateBranch(
+            $pdo, 
+            $Manager, 
+            $contact_number, 
+            $first_name, 
+            $last_name, 
+            $email, 
+            $gender, 
+            $address, 
+            $job_position, 
+            $application_status, 
+            $date, 
+            $_SESSION['username'], 
+            $branch_id
+        );
+        
+        // Set the session message for success or failure
+        $_SESSION['message'] = $updateBranch['message'];
+        $_SESSION['status'] = $updateBranch['status'];
+        
+        // Redirect to the home page after updating the branch
+        header("Location: ../index.php");
+        exit();
+    } else {
+        // Set an error message if required fields are missing
+        $_SESSION['message'] = "Please make sure all fields are filled in!";
+        $_SESSION['status'] = '400';
+        
+        // Redirect back to the branch edit page with the branch ID
+        header("Location: ../updatebranch.php?branch_id=" . $branch_id); 
+        exit();
+    }
 }
+
 
 if (isset($_POST['deleteBranchBtn'])) {
-	$branch_id = $_GET['branch_id'];
+    $branch_id = $_POST['branch_id'] ?? null;
 
-	if (!empty($branch_id)) {
-		// Delete branch from branches table
-		$deleteBranch = deleteBranch($pdo, $branch_id);
-		$_SESSION['message'] = $deleteBranch['message'];
-		$_SESSION['status'] = $deleteBranch['status'];
-		header("Location: ../index.php");
-	}
+    if ($branch_id) {
+        $result = deleteBranch($pdo, $branch_id);
+
+        if ($result['status'] === '200') {
+            $_SESSION['message'] = "Branch deleted successfully!";
+            $_SESSION['status'] = '200';
+        } else {
+            $_SESSION['message'] = "Error deleting branch: " . $result['message'];
+            $_SESSION['status'] = '400';
+        }
+    } else {
+        $_SESSION['message'] = "Invalid branch ID!";
+        $_SESSION['status'] = '400';
+    }
+
+    header("Location: ../index.php");
+    exit();
 }
 
-if (isset($_GET['logoutUserBtn'])) {
-	unset($_SESSION['username']);
-	header("Location: ../login.php");
-}
 ?>
