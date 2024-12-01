@@ -85,7 +85,7 @@ function getAllBranches($pdo) {
     }
 }
 
-function getAllBranchesBySearch($pdo, $search_query) {
+function getBranchesBySearch($pdo, $search_query) {
     $sql = "SELECT * FROM branches WHERE 
             CONCAT(Manager, contact_number, date_added, added_by, last_updated, last_updated_by) 
             LIKE ?";
@@ -306,12 +306,12 @@ function deleteBranch($pdo, $branch_id) {
             $_SESSION['username']
         );
 
-        if ($insertAnActivityLog === false) {  // Handle failure in activity logging
+        if ($insertAnActivityLog === false) { 
             $response = array(
                 "status" => "400",
                 "message" => "Error logging activity."
             );
-            return $response;  // Return early to prevent deletion if logging failed
+            return $response;  
         }
 
         // Proceed to delete the branch
@@ -339,6 +339,36 @@ function deleteBranch($pdo, $branch_id) {
 
     return $response;
 }
+
+function logSearchQuery($pdo, $keyword, $username) {
+    $sql = "INSERT INTO search_history (keyword, username) 
+            VALUES (?,?)";
+    $stmt = $pdo->prepare($sql);
+    $executeQuery = $stmt->execute([$keyword, $username]);
+
+    if ($executeQuery) {
+        return true;
+    }
+}
+
+function searchbranches($pdo, $keyword, $username) {
+    $sql = "SELECT * FROM branches WHERE 
+            CONCAT(Manager, contact_number, first_name, last_name, email, gender, address, job_position, application_status) LIKE ?";
+    $stmt = $pdo->prepare($sql);
+    $executeQuery = $stmt->execute(["%" . $keyword . "%"]);
+    if ($executeQuery) {
+        return $stmt->fetchAll();
+    }
+}
+
+function getSearchHistory($pdo) {
+    $sql = "SELECT * FROM search_history ORDER BY search_id";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+
 
 
 

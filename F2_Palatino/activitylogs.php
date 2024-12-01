@@ -14,7 +14,14 @@ if (!isset($_SESSION['username'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Activity Logs</title>
-    <link rel="stylesheet" href="styles/styles.css">
+    
+    <style>
+    	
+    	th{
+    		background-color: #d6cbd3;
+    	}
+    </style>
+
 </head>
 <body>
     <?php include 'navbar.php'; ?>

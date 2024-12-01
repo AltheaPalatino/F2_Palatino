@@ -168,4 +168,18 @@ if (isset($_POST['deleteBranchBtn'])) {
     exit();
 }
 
+
+if (isset($_GET['searchBtn'])) {
+    $keyword = $_GET['keyword'];
+    $username = $_SESSION['username'];
+    logSearchQuery($pdo, $keyword, $username);
+    $searchbranches = searchbranches($pdo, $keyword, $username);
+}
+
+if (isset($_GET['logoutUserBtn'])) {
+    unset($_SESSION['username']);
+    header("Location: ../login.php");
+}
+
+
 ?>

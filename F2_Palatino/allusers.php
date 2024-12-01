@@ -12,7 +12,28 @@ if (!isset($_SESSION['username'])) {
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>All Users</title>
-	<link rel="stylesheet" href="styles/styles.css">
+	<style>
+		th{
+    		background-color: #d6cbd3;
+    		text-align: center;
+    	}
+
+    	td{
+    		text-align: center;
+    	}
+
+    	th, td {
+			padding: 12px;
+			border: px double; #ddd;
+			text-align: center;
+			
+		}
+
+		tr{
+			border: solid;
+		}
+
+	</style>
 </head>
 <body>
 	<?php include 'navbar.php'; ?>

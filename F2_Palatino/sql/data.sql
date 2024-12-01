@@ -16,13 +16,11 @@ CREATE TABLE branches (
     address VARCHAR(255),
     job_position VARCHAR(255),
     application_status VARCHAR(255),
-    date_applied TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date_added TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     added_by VARCHAR(255),
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_updated_by VARCHAR(255)
 );
-
-
 
 CREATE TABLE activity_logs (
     Applicant_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -37,6 +35,14 @@ CREATE TABLE activity_logs (
     address VARCHAR(255),
     job_position VARCHAR(255),
     application_status VARCHAR(255),
-    date_applied TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      -- Newly added column
+    username VARCHAR(255),
+    date_added TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+     
+);
+
+CREATE TABLE search_history (
+    search_id INT AUTO_INCREMENT PRIMARY KEY,
+    keyword VARCHAR(255),
+    username VARCHAR(100),
+    date_searched TIMESTAMP DEFAULT CURRENT_TIMESTAMP 
 );
